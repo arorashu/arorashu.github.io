@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Shubham Arora&#39;s space</title>
+    <link>http://shubhamarora.com/dev/public/</link>
+    <description>Recent content on Shubham Arora&#39;s space</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 26 Mar 2019 08:47:11 +0100</lastBuildDate>
+    
+	<atom:link href="http://shubhamarora.com/dev/public/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Hello, There</title>
+      <link>http://shubhamarora.com/dev/public/about/</link>
+      <pubDate>Tue, 26 Mar 2019 08:47:11 +0100</pubDate>
+      
+      <guid>http://shubhamarora.com/dev/public/about/</guid>
+      <description>Hello, There I am an MS student in Computer Engineering at Boston University. In the past, I have worked as a Software Engineer in Arcesium India Pvt Ltd. I did my Bachelors in Engineering from Netaji Subhas Institute Of Technology, Delhi.</description>
+    </item>
+    
+    <item>
+      <title>Setting up hugo</title>
+      <link>http://shubhamarora.com/dev/public/posts/hugo-start/</link>
+      <pubDate>Tue, 26 Mar 2019 08:47:11 +0100</pubDate>
+      
+      <guid>http://shubhamarora.com/dev/public/posts/hugo-start/</guid>
+      <description>Setting up hugo I am an MS student in Computer Engineering at Boston University. In the past, I have worked as a Software Engineer in Arcesium India Pvt Ltd. I did my Bachelors in Engineering from Netaji Subhas Institute Of Technology, Delhi.</description>
+    </item>
+    
+  </channel>
+</rss>
