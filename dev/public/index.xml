@@ -2,30 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Shubham Arora&#39;s space</title>
-    <link>http://arorashu.github.io/dev/public/</link>
+    <link>https://arorashu.github.io/dev/public/</link>
     <description>Recent content on Shubham Arora&#39;s space</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 26 Mar 2019 08:47:11 +0100</lastBuildDate>
     
-	<atom:link href="http://arorashu.github.io/dev/public/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://arorashu.github.io/dev/public/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Hello, There</title>
-      <link>http://arorashu.github.io/dev/public/about/</link>
+      <link>https://arorashu.github.io/dev/public/about/</link>
       <pubDate>Tue, 26 Mar 2019 08:47:11 +0100</pubDate>
       
-      <guid>http://arorashu.github.io/dev/public/about/</guid>
+      <guid>https://arorashu.github.io/dev/public/about/</guid>
       <description>Hello, There I am an MS student in Computer Engineering at Boston University. In the past, I have worked as a Software Engineer in Arcesium India Pvt Ltd. I did my Bachelors in Engineering from Netaji Subhas Institute Of Technology, Delhi.</description>
     </item>
     
     <item>
       <title>Setting up hugo</title>
-      <link>http://arorashu.github.io/dev/public/posts/hugo-start/</link>
+      <link>https://arorashu.github.io/dev/public/posts/hugo-start/</link>
       <pubDate>Tue, 26 Mar 2019 08:47:11 +0100</pubDate>
       
-      <guid>http://arorashu.github.io/dev/public/posts/hugo-start/</guid>
+      <guid>https://arorashu.github.io/dev/public/posts/hugo-start/</guid>
       <description>Setting up hugo I am an MS student in Computer Engineering at Boston University. In the past, I have worked as a Software Engineer in Arcesium India Pvt Ltd. I did my Bachelors in Engineering from Netaji Subhas Institute Of Technology, Delhi.</description>
     </item>
     

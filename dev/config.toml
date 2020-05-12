@@ -1,4 +1,4 @@
-baseurl = "http://arorashu.github.io/dev/public/"
+baseurl = "https://arorashu.github.io/dev/public/"
 languageCode = "en-us"
 theme = "terminal"
 paginate = 5
