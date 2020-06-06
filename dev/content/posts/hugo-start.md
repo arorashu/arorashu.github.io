@@ -1,7 +1,7 @@
 ---
 title: "Setting up hugo"
-date: 2019-03-26T08:47:11+01:00
-draft: true
+date: 2020-05-12T08:47:11+01:00
+draft: false
 ---
 
 ## Setting up hugo
