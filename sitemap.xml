@@ -3,22 +3,24 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>/posts/</loc>
-    <lastmod>2020-05-12T08:47:11+01:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/posts/hugo-start/</loc>
-    <lastmod>2020-05-12T08:47:11+01:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/</loc>
-    <lastmod>2020-05-12T08:47:11+01:00</lastmod>
+    <lastmod>2020-06-07T20:11:03-04:00</lastmod>
+    <priority>0</priority>
   </url>
   
   <url>
-    <loc>/about/</loc>
+    <loc>/posts/meditating-on-mortality/</loc>
+    <lastmod>2020-06-07T20:11:03-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/posts/</loc>
+    <lastmod>2020-06-07T20:11:03-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/posts/setting-up-hugo/</loc>
+    <lastmod>2020-06-07T19:56:24-04:00</lastmod>
   </url>
   
   <url>
