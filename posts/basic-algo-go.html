@@ -1,0 +1,61 @@
+<head><title>basic algorithms in go</title></head>
+<body>
+    <div id="graph" class="algo-types">
+        <h2>Graph</h2>
+        <h3>Topological sort</h3>
+        <p><pre>
+            // edges from prereq[][1] -> prereq[][0]
+            // function to return if topologicalSort is possible
+            // finalQ stores the resulting sort
+            func topologicalSort(numNodes int, prerequisites [][]int) bool {
+        
+                if len(prerequisites) == 0 { return true }
+                
+                g := make(map[int][]int)
+                
+                for _, pair := range prerequisites {
+                    if _, ok := g[pair[1]]; !ok {
+                        g[pair[1]] = make([]int, 0)
+                    }     
+                    g[pair[1]] = append(g[pair[1]], pair[0])
+                }
+                
+                visited := make([]int, numCourses)
+                finalQ := make([]int, 0)
+                // 0 is unvisited
+                // 1 is temp
+                // 2 is permanent
+                
+                for k, _ := range g {
+                    if visited[k] != 2{
+                        if !dfs(k, g, visited, &finalQ) {
+                            return false
+                        }
+                    }
+                }
+                // fmt.Printf("finalQ: {%v}\n", finalQ)
+                return true
+                
+            }
+            
+            func dfs(start int, g map[int][]int, visited []int, finalQ *[]int) bool {
+                if visited[start]==1 { // temp mark - cycle
+                    return false
+                }
+                if visited[start] == 2 { // why? 
+                    return true
+                }
+                visited[start] = 1
+                for _, elem := range g[start] {
+                    if !dfs(elem, g, visited, finalQ) {
+                        return false
+                    }
+                }
+                visited[start] = 2
+                *finalQ = append(*finalQ, start)
+                return true
+            }
+        </pre></p>
+        <span>References: <a href="https://en.wikipedia.org/wiki/Topological_sorting">Wikipedia</a></span>
+    </div>
+</body>
