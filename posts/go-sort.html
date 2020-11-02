@@ -1,16 +1,25 @@
 <head>
     <title>sorting in go</title>
 </head>
+
 <body>
     <div>
-        <h3>Sorting int slices</h3>
-        <p>
-        <pre>
+    <h3>Sorting int slices</h3>
+    <p><pre>
+    package main
+
+    import (
+        "fmt"
+        "sort"
+    )
+
+    func main() {
         arr := []int {20, 13, 12, 5, 1}
-        sort.Ints(arr)
-    </pre>
-        </p>
-        <p>code at <a href="https://play.golang.org/p/twbbzi7qi_y">go playground</a></p>
-        <p> <a href="https://golang.org/pkg/sort/">godoc reference</a></p>
+            sort.Ints(arr)
+        fmt.Printf("%v \n", arr)
+    }
+    </pre></p>
+    <p>code at <a href="https://play.golang.org/p/twbbzi7qi_y">go playground</a></p>
+    <p> <a href="https://golang.org/pkg/sort/">godoc reference</a></p>
     </div>
 </body>
