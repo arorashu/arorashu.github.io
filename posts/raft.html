@@ -1,0 +1,992 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Understanding Raft</title><style>
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 3px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	text-indent: -1.7em;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, YuMincho, "Yu Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Songti TC", "Songti SC", "SimSun", "Nanum Myeongjo", NanumMyeongjo, Batang, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC', 'Noto Sans CJK KR'; }
+
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK KR'; }
+
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, YuMincho, "Yu Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Songti TC", "Songti SC", "SimSun", "Nanum Myeongjo", NanumMyeongjo, Batang, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC', 'Noto Sans CJK KR'; }
+
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK KR'; }
+
+.highlight-default {
+}
+.highlight-gray {
+	color: rgb(155,154,151);
+}
+.highlight-brown {
+	color: rgb(100,71,58);
+}
+.highlight-orange {
+	color: rgb(217,115,13);
+}
+.highlight-yellow {
+	color: rgb(223,171,1);
+}
+.highlight-teal {
+	color: rgb(15,123,108);
+}
+.highlight-blue {
+	color: rgb(11,110,153);
+}
+.highlight-purple {
+	color: rgb(105,64,165);
+}
+.highlight-pink {
+	color: rgb(173,26,114);
+}
+.highlight-red {
+	color: rgb(224,62,62);
+}
+.highlight-gray_background {
+	background: rgb(235,236,237);
+}
+.highlight-brown_background {
+	background: rgb(233,229,227);
+}
+.highlight-orange_background {
+	background: rgb(250,235,221);
+}
+.highlight-yellow_background {
+	background: rgb(251,243,219);
+}
+.highlight-teal_background {
+	background: rgb(221,237,234);
+}
+.highlight-blue_background {
+	background: rgb(221,235,241);
+}
+.highlight-purple_background {
+	background: rgb(234,228,242);
+}
+.highlight-pink_background {
+	background: rgb(244,223,235);
+}
+.highlight-red_background {
+	background: rgb(251,228,228);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(55, 53, 47, 0.6);
+	fill: rgba(55, 53, 47, 0.6);
+}
+.block-color-brown {
+	color: rgb(100,71,58);
+	fill: rgb(100,71,58);
+}
+.block-color-orange {
+	color: rgb(217,115,13);
+	fill: rgb(217,115,13);
+}
+.block-color-yellow {
+	color: rgb(223,171,1);
+	fill: rgb(223,171,1);
+}
+.block-color-teal {
+	color: rgb(15,123,108);
+	fill: rgb(15,123,108);
+}
+.block-color-blue {
+	color: rgb(11,110,153);
+	fill: rgb(11,110,153);
+}
+.block-color-purple {
+	color: rgb(105,64,165);
+	fill: rgb(105,64,165);
+}
+.block-color-pink {
+	color: rgb(173,26,114);
+	fill: rgb(173,26,114);
+}
+.block-color-red {
+	color: rgb(224,62,62);
+	fill: rgb(224,62,62);
+}
+.block-color-gray_background {
+	background: rgb(235,236,237);
+}
+.block-color-brown_background {
+	background: rgb(233,229,227);
+}
+.block-color-orange_background {
+	background: rgb(250,235,221);
+}
+.block-color-yellow_background {
+	background: rgb(251,243,219);
+}
+.block-color-teal_background {
+	background: rgb(221,237,234);
+}
+.block-color-blue_background {
+	background: rgb(221,235,241);
+}
+.block-color-purple_background {
+	background: rgb(234,228,242);
+}
+.block-color-pink_background {
+	background: rgb(244,223,235);
+}
+.block-color-red_background {
+	background: rgb(251,228,228);
+}
+.select-value-color-default { background-color: rgba(206,205,202,0.5); }
+.select-value-color-gray { background-color: rgba(155,154,151, 0.4); }
+.select-value-color-brown { background-color: rgba(140,46,0,0.2); }
+.select-value-color-orange { background-color: rgba(245,93,0,0.2); }
+.select-value-color-yellow { background-color: rgba(233,168,0,0.2); }
+.select-value-color-green { background-color: rgba(0,135,107,0.2); }
+.select-value-color-blue { background-color: rgba(0,120,223,0.2); }
+.select-value-color-purple { background-color: rgba(103,36,222,0.2); }
+.select-value-color-pink { background-color: rgba(221,0,129,0.2); }
+.select-value-color-red { background-color: rgba(255,0,26,0.2); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="11318583-0afc-48b3-b691-37ae1b568cc9" class="page sans"><header><div class="page-header-icon undefined"><span class="icon">🖥️</span></div><h1 class="page-title">Understanding Raft</h1></header><div class="page-body"><h1 id="52502a14-44b4-435e-8ba0-618d4698399c" class="">Understanding Raft consensus algorithm</h1><p id="7397d00c-c22f-4d60-b5f9-ea9207c4873d" class="">Raft is a consensus algorithm for managing a replicated log. In this article, I will explore what is distributed consensus and why do we need it? Specifically, I will discuss how the Raft algorithm works, and some implementation code in Go. The text and diagrams are liberally copied from the main Raft paper, but edited and re-organized as a future refrence for myself.</p><h1 id="c5afd270-f76e-4bb9-b4e4-626dd2e1f7f0" class="">Consensus</h1><p id="39753ef3-cad9-48d0-b75f-41cb37239255" class="">Consensus algorithms allow a collection of machines to work as a coherent group that can survive the failures of some of its members.</p><h1 id="5d30321e-7458-4150-af9d-67837b0aa311" class="">Why do we need consensus?</h1><p id="9c6f848a-7a6a-4e4b-840e-db2f2b0ff05a" class="">Consensus algorithms typically arise in the context of replicated state machines. In this approach, state machines on a collection of servers compute identical copies of the same state and can continue operating even if some of the servers are down. Replicated state machines are used to solve a variety of fault tolerance problems in distributed systems. For example, large-scale systems that have a single cluster leader, such as GFS and HDFS typically use a separate replicated state machine to manage leader election and store configuration information that must survive leader crashes. Examples of replicated state machines include Chubby and ZooKeeper.</p><h1 id="bd67cc16-81e5-4019-99bb-a458742a20e2" class="">Raft consesnus</h1><p id="263a4843-8107-486d-bc39-3b9fc6d632d9" class="">Raft separates the key elements of consensus, such as leader election, log replication, and safety. As described earlier, Raft is an algorithm for managing a replicated log. The <em>log</em> is just the state of the system. </p><p id="ceb4c3eb-0bb3-4ef2-bb59-c043344edd26" class="">Raft implements consensus by first electing a distinguished leader, then giving the leader complete responsibility for managing the replicated log. The leader accepts log entries from clients, replicates them on other servers, and tells servers when it is safe to apply log entries to their state machines.</p><p id="bf4eb97c-1874-4e47-a7a5-e3b471572bb1" class="">Having a leader simplifies the management of the replicated log. For example, the leader can decide where to place new entries in the log without consulting other servers, and data flows in a simple fashion from the leader to other servers. A leader can fail or become disconnected from the other servers, in which case a new leader is elected.</p><h2 id="db536984-c230-40ed-8835-d2d9a438489f" class="">Basics</h2><p id="a046faaf-8223-47fb-9556-3e5b3f0d60e0" class="">The state of each server of the cluster is represented as:</p><figure id="b31c759e-322b-4e7d-8a5a-fc4a1e350eae" class="image"><a href="raft-assets/Untitled.png"><img style="width:401px" src="raft-assets/Untitled.png"/></a></figure><p id="d11b9bda-2a31-4e76-8d97-b4e423175600" class="">At any given time each server is in one of three states: <strong>leader, follower</strong>, or <strong>candidate</strong>. In normal operation there is exactly one leader and all of the other servers are followers.</p><h2 id="e2dca06f-cc2d-4009-9561-fdec4b452f96" class="">Leaders, Candidates and Followers</h2><figure id="8c5e92c3-be51-43b7-88c9-93fe9e8d7229" class="image"><a href="raft-assets/Untitled%201.png"><img style="width:423px" src="raft-assets/Untitled%201.png"/></a></figure><ol id="c8b25071-126b-4c8d-9598-757f4a16da6a" class="numbered-list" start="1"><li>Followers are passive: they issue no requests on their own but simply respond to requests from leaders and candidates</li></ol><ol id="6a9f95e8-6f72-45dc-ac19-f91b6cfe41bf" class="numbered-list" start="2"><li>The leader handles all client requests (if a client contacts a follower, the follower redirects it to the leader).</li></ol><p id="7c3cb26e-f865-4660-958c-6ee32574033b" class="">
+</p><h2 id="43616fcb-ef87-480d-a774-2ad96e0de335" class="">Time</h2><figure id="a790f4b0-8ca8-47b5-83ef-71e6e370c122" class="image"><a href="raft-assets/Untitled%202.png"><img style="width:414px" src="raft-assets/Untitled%202.png"/></a></figure><ol id="432fe5ea-9e37-42f6-a508-760064dd48c8" class="numbered-list" start="1"><li>Raft divides time into <strong>terms</strong> of arbitrary length, as shown in Figure 5</li></ol><ol id="20f2f0b6-adb1-4e5e-9d39-3c8a2a476972" class="numbered-list" start="2"><li>Terms are numbered with consecutive integers, Each term begins with an election. Raft ensures that there is at most one leader in a given term.</li></ol><ol id="6f53075f-9cde-40d2-a908-6da8a2e7fd7e" class="numbered-list" start="3"><li>Different servers may observe the transitions between terms at different times, and in some situations a server may not observe an election or even entire terms. </li></ol><ol id="ee053285-cc43-45d1-be10-1f7175c3b1b7" class="numbered-list" start="4"><li>Terms act as a <strong>logical clock</strong> in Raft, and they allow servers to detect obsolete information such as stale leaders. Each server stores a current term number, which increases monotonically over time.</li></ol><ol id="7216722b-65ad-4998-a33c-ddd4a6f1ceb6" class="numbered-list" start="5"><li>Current terms are exchanged whenever servers communicate; if one server’s current term is smaller than the other’s, then it updates its current term to the larger value. If a candidate or leader discovers that its term is out of date, it immediately reverts to follower state. If a server receives a request with a stale term number, it rejects the request.</li></ol><h2 id="7274cea6-ecc5-493c-91fd-d478f45f13a7" class="">Communication between servers</h2><p id="957e30b3-be2c-4054-9921-ab24391f690e" class="">Raft servers communicate using remote procedure calls (RPCs)</p><p id="e9ab1641-794b-40b1-a8a9-7f1876bfeba3" class="">The basic consensus algorithm requires only two types of RPCs. <strong>RequestVote</strong> RPCs are initiated by candidates during elections, and <strong>AppendEntries</strong> RPCs are initiated by leaders to replicate log entries and to provide a form of heartbeat.</p><h1 id="797b039e-2ea7-46a3-a177-dfcda2d6d0fc" class="">Leader Election</h1><ol id="a6144d33-fe6d-477c-ac99-86ed047ab176" class="numbered-list" start="1"><li>A new leader must be chosen when the cluster starts operation or an existing leader fails.</li></ol><ol id="63a14c30-d3b6-4a35-a731-5e853e799ca8" class="numbered-list" start="2"><li>Raft uses a heartbeat mechanism to trigger leader election.</li></ol><ol id="5433d8da-8398-438d-8a5e-b4b45ef3ab8c" class="numbered-list" start="3"><li>A server remains in follower state as long as it receives valid RPCs from a leader or candidate. Leaders send periodic heartbeats (AppendEntries RPCs that carry no log entries) to all followers in order to maintain their authority.</li></ol><ol id="0e999eee-cb7a-46a3-b05b-c00054d79550" class="numbered-list" start="4"><li>If a follower receives no communication over a period of time called the election timeout, then it assumes there is no viable leader and begins an election to choose a new leader.</li></ol><ol id="d6fd1407-b215-4345-b366-9ccbd799715d" class="numbered-list" start="5"><li>To begin an election, a follower increments its current term and transitions to candidate state. It then votes for itself and issues RequestVote RPCs in parallel to each of the other servers in the cluster.</li></ol><ol id="bbd2e7e6-bac6-4d0e-bbe1-320774c63894" class="numbered-list" start="6"><li>A candidate continues in this state until one of three things happens: (a) it wins the election, (b) another server establishes itself as leader, or (c) a period of time goes by with no winner.<ol id="4b52d1b2-78be-49e3-bdd9-1f423a843787" class="numbered-list" start="1"><li>A candidate wins an election if it receives votes from a majority of the servers in the full cluster for the same term</li></ol><ol id="a89c7fa2-a2bd-439a-9013-8daa02ce133f" class="numbered-list" start="2"><li>Each server will vote for at most one candidate in a given term, on a first-come-first-served basis</li></ol><ol id="22410e4c-1836-4dd2-897d-ecc2d710fb55" class="numbered-list" start="3"><li>The majority rule ensures that at most one candidate can win the election for a particular term</li></ol><ol id="ced062cd-1aaa-4ee1-9b3a-0ed798841463" class="numbered-list" start="4"><li>Once a candidate wins an election, it becomes leader. It then sends heartbeat messages to all of the other servers to establish its authority and prevent new elections</li></ol></li></ol><ol id="57924399-4215-41d9-bcbd-36b1cc2a10c8" class="numbered-list" start="7"><li>While waiting for votes, a candidate may receive an AppendEntries RPC from another server claiming to be leader. If the leader’s term (included in its RPC) is at least as large as the candidate’s current term, then the candidate recognizes the leader as legitimate and returns to follower state. If the term in the RPC is smaller than the candidate’s current term, then the candidate rejects the RPC and continues in candidate state.</li></ol><ol id="4732754a-856b-4d92-80cd-7b6d0bbeacd8" class="numbered-list" start="8"><li>The third possible outcome is that a candidate neither wins nor loses the election: if many followers become candidates at the same time, votes could be split so that no candidate obtains a majority. When this happens, each candidate will time out and start a new election by incrementing its term and initiating another round of RequestVote RPCs. However, without extra measures split votes could repeat indefinitely.</li></ol><ol id="c7f9ca69-298f-4508-b441-41c43e4119b7" class="numbered-list" start="9"><li>Raft uses <strong>randomized election timeouts</strong> to ensure that split votes are rare and that they are resolved quickly. To prevent split votes in the first place, election timeouts are chosen randomly from a fixed interval (e.g., 150–300ms)<ol id="e95696d4-cdba-4db1-b7a2-e5d78134c7a2" class="numbered-list" start="1"><li>This spreads out the servers so that in most cases only a single server will time out; it wins the election and sends heartbeats before any other servers time out</li></ol><ol id="3118f883-ad9d-48a5-91d0-467ad22a37ea" class="numbered-list" start="2"><li>The same mechanism is used to handle split votes. Each candidate restarts its randomized election timeout at the start of an election, and it waits for that timeout to elapse before starting the next election; this reduces the likelihood of another split vote in the new election</li></ol><p id="b9050cad-8c78-4351-a252-c106826ecd88" class="">
+</p></li></ol><p id="fb117f71-ae80-43fc-a9b5-c2ad4ad061f7" class="">The relevant code a candidate runs for for leader election is:</p><pre id="d03a131c-5cd4-4bc8-86b6-d9a762d57bd8" class="code code-wrap"><code>func (rf *Raft) triggerElection() {
+	rf.mu.Lock()
+	DPrintf(&quot;Debug, Candidate, I : %d set lock for starting election \n&quot;, rf.me)
+	rf.currentState = Candidate
+	rf.currentTerm += 1
+	lastLogIndex := rf.logIndex - 1
+	lastLogTerm := rf.log[lastLogIndex].Term
+	rf.votedFor = rf.me
+
+	DPrintf(&quot;Debug, Candidate, I : %d starting new election with term: %d \n&quot;, rf.me, rf.currentTerm)
+
+	peerCount := len(rf.peers)
+
+	// send request vote rpc to all servers
+	requestArgs := RequestVoteArgs{
+		Term:         rf.currentTerm,
+		CandidateId:  rf.me,
+		LastLogIndex: lastLogIndex,
+		LastLogTerm:  lastLogTerm,
+	}
+
+	rf.persist()
+	rf.mu.Unlock()
+
+	voteCount := 1
+	halfPeerCount := peerCount / 2
+
+	DPrintf(&quot;Debug, Leader, I: %d request vote from peers\n&quot;, rf.me)
+	// ask for votes concurrently
+	voteChannel := make(chan bool, peerCount-1)
+	retryChannel := make(chan int, peerCount-1)
+	for i := 0; i &lt; peerCount; i++ {
+		if rf.me != i {
+			go rf.requestVotesFromPeer(i, &amp;requestArgs, voteChannel, retryChannel)
+		}
+	}
+
+	electionDuration := newRandDuration(ElectionTimeout)
+	electionTimer := time.NewTimer(electionDuration)
+
+	for {
+		select {
+		case vote := &lt;-voteChannel:
+			if vote == false {
+				return
+			}
+			voteCount += 1
+			// majority votes, elected Leader
+			if voteCount &gt; halfPeerCount {
+				rf.mu.Lock()
+				if rf.currentState == Candidate {
+					DPrintf(&quot;Debug, Candidate, I: %d got majority \n&quot;, rf.me)
+					rf.currentState = Leader
+					rf.initIndexes()
+					go rf.replicateLogs()
+				}
+				rf.mu.Unlock()
+				return
+			}
+		case follower := &lt;-retryChannel:
+			rf.mu.Lock()
+			if rf.currentState == Candidate &amp;&amp; rf.status==Live {
+				go rf.requestVotesFromPeer(follower, &amp;requestArgs, voteChannel, retryChannel)
+				rf.mu.Unlock()
+			} else {
+				rf.mu.Unlock()
+				return
+			}
+		case &lt;-electionTimer.C: // election timeout
+			rf.mu.Lock()
+			if rf.currentState == Candidate &amp;&amp; rf.status==Live {
+				go rf.triggerElection()
+			}
+			rf.mu.Unlock()
+			return
+		}
+	}
+}
+
+
+func (rf *Raft) requestVotesFromPeer(peerId int, requestArgs *RequestVoteArgs, voteChan chan&lt;- bool, retryChannel chan&lt;- int) {
+
+	var voteReply RequestVoteReply
+	ok := rf.peers[peerId].Call(&quot;Raft.RequestVote&quot;, requestArgs, &amp;voteReply)
+	if ok == true {
+		if voteReply.VoteGranted == true {
+			voteChan &lt;- true
+		} else {
+			rf.mu.Lock()
+			if rf.currentTerm &lt; voteReply.Term {
+				rf.currentState = Follower
+				rf.currentTerm = voteReply.Term
+				rf.votedFor = -1
+				rf.currentLeader = -1
+				rf.resetTimer(HEARTBEAT)
+				rf.persist()
+				// stop election
+				// wrap in go func because send to channel
+				// will be blocking unless there is receiver
+				go func() {voteChan &lt;- false} ()
+			}
+			rf.mu.Unlock()
+		}
+	} else {
+		// call failed
+		DPrintf(&quot;Error, Leader, I: %d, peer: %d call failed&quot;, rf.me, peerId)
+		retryChannel &lt;- peerId
+		return
+	}
+}
+</code></pre><p id="67aca522-ba55-4be8-961e-234af6d619e1" class="">
+</p><p id="0e2cad61-919d-4efe-a5ad-dda1a899bfb0" class="">The code for peers voting in an election is:</p><pre id="4a1ce327-5dd8-4eb9-ae92-c9a82ff4c72a" class="code code-wrap"><code>// RequestVote RPC handler.
+func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
+
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	if rf.currentTerm==args.Term &amp;&amp; rf.votedFor==args.CandidateId {
+		reply.VoteGranted, reply.Term = true, rf.currentTerm
+		return
+	}
+
+	if args.Term &lt; rf.currentTerm  ||
+		(rf.currentTerm==args.Term &amp;&amp; rf.votedFor!=-1){
+		DPrintf(&quot;Error, I : %d CANT vote for: %d, MYTERM: %d , Their TERM: %d \n&quot;,
+			rf.me, args.CandidateId, rf.currentTerm, args.Term)
+
+		reply.VoteGranted = false
+		reply.Term = rf.currentTerm
+		return
+	}
+
+	if args.Term &gt; rf.currentTerm {
+		rf.votedFor, rf.currentTerm = -1, args.Term
+		rf.persist()
+		if rf.currentState != Follower {
+			rf.resetTimer(HEARTBEAT)
+			rf.currentState = Follower
+		}
+	}
+
+	// still trying to elect leader
+	rf.currentLeader = -1
+	reply.Term = args.Term
+	lastLogIndex := rf.logIndex - 1
+	if lastLogIndex == 0 &amp;&amp; (rf.lastApplied!=0 || rf.commitIndex!=0) {
+		// never applied on this peer
+	}
+	if (rf.log[lastLogIndex].Term &gt; args.LastLogTerm) ||
+		(rf.log[lastLogIndex].Term == args.LastLogTerm &amp;&amp; lastLogIndex &gt; args.LastLogIndex) {
+		// this server has longer log, under same term
+		reply.VoteGranted = false
+		return
+	}
+	reply.VoteGranted = true
+	rf.votedFor = args.CandidateId
+	rf.resetTimer(HEARTBEAT)
+	rf.persist()
+
+	DPrintf(&quot;I: %d, voted true for:  %d\n&quot;, rf.me, args.CandidateId)
+
+}</code></pre><h1 id="bf82a953-483b-4ab3-8711-8cccc1a60812" class="">Log Replication</h1><p id="c624e062-9bc4-4130-a694-b7d208a5655d" class="">Once the leader is elected, the cluster is ready to start serving client requests.</p><figure id="668ecbd3-93cc-4de5-973c-656532d5f4bd" class="image"><a href="raft-assets/Untitled%203.png"><img style="width:418px" src="raft-assets/Untitled%203.png"/></a></figure><ol id="2afdd489-6684-44f9-974e-2e1a60c4367c" class="numbered-list" start="1"><li>Each client request contains a command to be executed by the replicated state machines.</li></ol><ol id="5e812e53-b2f3-40be-ba42-0c86129aa2c1" class="numbered-list" start="2"><li>The leader appends the command to its log as a new entry, then issues AppendEntries RPCs in parallel to each of the other servers to replicate the entry. When the entry has been safely replicated (as described below), the leader applies the entry to its state machine and returns the result of that execution to the client</li></ol><ol id="87c0a5ed-ce38-4c24-b040-faf807e98d61" class="numbered-list" start="3"><li>If followers crash or run slowly, or if network packets are lost, the leader retries AppendEntries-RPCs indefinitely (even after it has responded to the client) until all followers eventually store all log entries</li></ol><ol id="ee453f8d-79fa-42ee-962b-87ffa5f6b796" class="numbered-list" start="4"><li>Logs are organized as shown in Figure 6. Each log entry stores a state machine command along with the term number when the entry was received by the leader. Each log entry also has an integer index identifying its position in the log</li></ol><ol id="8951f351-a873-4efd-803c-36c3d3242f97" class="numbered-list" start="5"><li>The leader decides when it is safe to apply a log entry to the state machines; such an entry is called <strong>committed</strong></li></ol><ol id="e10bd2c8-715d-4ae4-8732-0823168e2eb1" class="numbered-list" start="6"><li>Raft guarantees that committed entries are durable and will eventually be executed by all of the available state machines. A log entry is committed once the leader that created the entry has replicated it on a majority of the servers (e.g., entry 7 in Figure 6).</li></ol><ol id="9f8c3b8d-fff9-4359-b114-6dd8f16a1a38" class="numbered-list" start="7"><li>The leader keeps track of the <em>highest index</em> it knows to be committed, and it includes that index in future AppendEntries RPCs (including heartbeats) so that the other servers eventually find out. Once a follower learns that a log entry is committed, it applies the entry to its local state machine (in log order)</li></ol><ol id="ef76faa7-2765-4318-8e95-0f100de7878e" class="numbered-list" start="8"><li>Raft maintains the following properties, which together constitute the <strong>Log Matching Property</strong>
+in:<ol id="43c192cc-ed04-44b6-9ec6-87f76925477f" class="numbered-list" start="1"><li>If two entries in different logs have the same index and term, then they store the same command</li></ol><ol id="7bb74b5a-799e-485c-abbd-3e5953fe14b0" class="numbered-list" start="2"><li>If two entries in different logs have the same index and term, then the logs are identical in all preceding entries</li></ol></li></ol><ol id="68832f09-95bd-4aea-869b-de650395cc3c" class="numbered-list" start="9"><li>In Raft, the leader handles <em>inconsistencies</em> by forcing the followers’ logs to duplicate its own. This means that conflicting entries in follower logs will be overwritten with entries from the leader’s log<ol id="486488f2-5e7d-4ee9-b778-72e1f8f55bc9" class="numbered-list" start="1"><li>To bring a follower’s log into consistency with its own, the leader must find the latest log entry where the two logs agree, delete any entries in the follower’s log after that point, and send the follower all of the leader’s entries after that point</li></ol></li></ol><ol id="f8e2d626-5b49-4db5-ac0e-1b77da6f72cb" class="numbered-list" start="10"><li>With this mechanism, a leader does not need to take any special actions to restore log consistency when it comes to power. It just begins normal operation, and the logs automatically converge in response to failures of the AppendEntries consistency check. A leader never overwrites or deletes entries in its own log</li></ol><p id="df858e92-93a7-46d9-ae8a-0d0cf38900cc" class="">
+</p><p id="fda844bd-9548-4b10-9b7b-8cb4f63ad563" class="">The main functions for a leader sending AppendEntries RPC is:</p><pre id="e3267914-582e-4eff-91eb-99f44678e294" class="code code-wrap"><code>// replicate logs on followers
+func (rf *Raft) replicateLogs() {
+	retryCh := make(chan int)
+	done := make(chan struct{})
+	go rf.retryAppendEntries(retryCh, done)
+	for {
+		rf.mu.Lock()
+		if rf.status!=Live || rf.currentState != Leader {
+			rf.mu.Unlock()
+			done &lt;- struct{}{}
+			return
+		}
+		DPrintf(&quot;Debug, LEADER, I: %d, replicate prev log index: %d \n&quot;, rf.me, rf.logIndex-1)
+		for peerId := 0; peerId &lt; len(rf.peers); peerId++ {
+			if peerId != rf.me {
+				go rf.sendAppendEntriesRPCToPeer(peerId, retryCh, false)
+			}
+		}
+		rf.mu.Unlock()
+		time.Sleep(AppendEntriesInterval)
+
+	}
+}
+
+
+
+func (rf *Raft) sendAppendEntriesRPCToPeer(peerId int, retryCh chan&lt;- int, empty bool) {
+
+	rf.mu.Lock()
+	if rf.currentState != Leader {
+		rf.mu.Unlock()
+		return
+	}
+	prevLogIndex := rf.nextIndex[peerId] - 1
+	prevLogTerm := rf.log[prevLogIndex].Term
+	var appendArgs AppendEntriesArgs
+	appendArgs = AppendEntriesArgs{
+		Term:         rf.currentTerm,
+		LeaderId:     rf.me,
+		PrevLogIndex: prevLogIndex,
+		PrevLogTerm:  prevLogTerm,
+		Entries:      nil,
+		LeaderCommit: rf.commitIndex,
+		Len:          0,
+	}
+
+	if rf.logIndex == rf.nextIndex[peerId] || empty {
+		appendArgs.Len = 0
+	} else {
+		logs := rf.log[prevLogIndex+1:]
+		appendArgs.Len = len(logs)
+		appendArgs.Entries = logs
+	}
+	rf.mu.Unlock()
+
+	var appendEntryReply AppendEntriesReply
+	ok := rf.peers[peerId].Call(&quot;Raft.AppendEntries&quot;, &amp;appendArgs, &amp;appendEntryReply)
+
+	if ok == true {
+		rf.mu.Lock()
+		if appendEntryReply.Success == true {
+			// awesome, this peer is up to date
+			// update peers nextIndex and matchIndex
+			prevLogIndex, logEntriesLen := appendArgs.PrevLogIndex, appendArgs.Len
+			if prevLogIndex+logEntriesLen &gt;= rf.nextIndex[peerId] {
+				rf.nextIndex[peerId] = prevLogIndex + logEntriesLen + 1
+				rf.matchIndex[peerId] = prevLogIndex + logEntriesLen
+				if logEntriesLen &gt; 0 {
+					DPrintf(&quot;Debug, Leader, I: %d leader updated peer: %d\n&quot;, rf.me, peerId)
+				}
+			}
+
+			// check matchIndex for peers
+			// and update commitIndex
+			if (prevLogIndex+logEntriesLen &lt; rf.logIndex) &amp;&amp;
+				(rf.commitIndex &lt; prevLogIndex+logEntriesLen) &amp;&amp;
+				(rf.log[prevLogIndex+logEntriesLen].Term == rf.currentTerm) {
+				peerCount := len(rf.peers)
+				halfPeerCount, count, syncfollower := peerCount/2, 1, make([]int, 0, 1)
+				for j := 0; j &lt; peerCount; j++ {
+					if j != rf.me &amp;&amp; rf.matchIndex[j] &gt;= prevLogIndex+logEntriesLen {
+						count += 1
+						syncfollower = append(syncfollower, j)
+					}
+				}
+				if count &gt; halfPeerCount {
+					// commit the log
+					rf.commitIndex = prevLogIndex + logEntriesLen
+					DPrintf(&quot;Debug, Leader, I: %d leader updated commit index: %d\n&quot;, rf.me, rf.commitIndex)
+					rf.persist()
+					go rf.notifyApply()
+				}
+			}
+		} else {
+			// server is obsolete
+			if appendEntryReply.Term &gt; rf.currentTerm {
+				rf.currentTerm, rf.currentState = appendEntryReply.Term, Follower
+				rf.votedFor, rf.currentLeader = -1, -1
+				rf.resetTimer(HEARTBEAT)
+				rf.persist()
+			} else {
+				// oops, this peer is NOT up to date
+				rf.nextIndex[peerId] = Max(1, Min(appendEntryReply.ConflictIndex, rf.logIndex))
+			}
+			DPrintf(&quot;Error, Leader, I: %d this peer: %d is NOT up to date&quot;, rf.me, peerId)
+		}
+
+		rf.mu.Unlock()
+
+	} else {
+		// call failed
+		// must do something
+		retryCh &lt;- peerId
+	}
+}
+
+func (rf *Raft) retryAppendEntries(retryCh chan int, done &lt;-chan struct{}) {
+	for {
+		select {
+		case peerId := &lt;-retryCh:
+			go rf.sendAppendEntriesRPCToPeer(peerId, retryCh, true)
+		case &lt;-done:
+			return
+		}
+	}
+}</code></pre><p id="793b23d8-0b04-4ec5-b301-ca94a21423b4" class="">
+</p><p id="57cf4216-fd8d-41e0-b9ee-712fae99d51a" class="">Similarly, the code for peers receiving new log entries is:</p><pre id="ee1acb3a-d509-4656-ae07-413cfbe98d09" class="code code-wrap"><code>// AppendEntries RPC handler.
+func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
+
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	if rf.currentTerm &gt; args.Term {
+		// Reply false if term &lt; currentTerm
+		reply.Success = false
+		reply.Term = rf.currentTerm
+		DPrintf(&quot;Error, Peer, I : %d DONOT write to log from master: %d, I HAVE BIG TERM MISMATCH: %d \n&quot;, rf.me, args.LeaderId, reply.Term)
+		return
+	}
+
+	reply.Term = args.Term
+	rf.currentLeader = args.LeaderId
+	rf.resetTimer(HEARTBEAT)
+
+	if args.Term &gt; rf.currentTerm {
+		rf.currentTerm = args.Term
+		rf.votedFor = -1
+		rf.persist()
+	}
+
+	rf.currentState = Follower
+
+	if (args.PrevLogIndex &gt;= rf.logIndex) || (rf.log[args.PrevLogIndex].Term != args.PrevLogTerm) {
+		// Reply false if log doesn’t contain an entry at prevLogIndex
+		// whose term matches prevLogTerm (§5.3)
+		conflictIndex := Min(rf.logIndex-1, args.PrevLogIndex)
+		conflictTerm := rf.log[conflictIndex].Term
+		for ; conflictIndex &gt; rf.commitIndex &amp;&amp; rf.log[conflictIndex-1].Term == conflictTerm; conflictIndex-- {
+		}
+		DPrintf(&quot;Error, Peer, I : %d DONOT write to log from master: %d, TERM MISMATCH: %d \n&quot;, rf.me, args.LeaderId, reply.Term)
+
+		reply.Success, reply.ConflictIndex = false, Max(rf.commitIndex+1, conflictIndex)
+		return
+	}
+
+	reply.Success, reply.ConflictIndex = true, -1
+	i := 0
+	for ; i &lt; args.Len; i++ {
+		if args.PrevLogIndex+1+i &gt;= rf.logIndex {
+			break
+		}
+
+		if rf.log[args.PrevLogIndex+1+i].Term != args.Entries[i].Term {
+			rf.logIndex = args.PrevLogIndex + 1 + i
+			rf.log = append(rf.log[:rf.logIndex]) //delete conflicts
+			break
+		}
+	}
+
+
+	for ; i &lt; args.Len; i++ {
+		rf.log = append(rf.log, args.Entries[i])
+		rf.logIndex += 1
+	}
+	DPrintf(&quot;Debug, Peer, I : %d write to log from master: %d, LOGS: %v \n&quot;, rf.me, args.LeaderId, rf.log)
+	DPrintf(&quot;Debug, Peer, I : %d commitIndex: %d, leaderCommit: %d, myLogLength: %d \n&quot;,
+		rf.me, rf.commitIndex, args.LeaderCommit, args.PrevLogIndex+args.Len)
+	DPrintf(&quot;Debug, Peer, I : %d new commitIndex: %d \n&quot;, rf.me, Max(rf.commitIndex, Min(args.LeaderCommit, args.PrevLogIndex+args.Len)))
+	rf.commitIndex = Max(rf.commitIndex, Min(args.LeaderCommit, args.PrevLogIndex+args.Len))
+	rf.persist()
+	rf.resetTimer(HEARTBEAT)
+	go rf.notifyApply()
+
+	return
+}</code></pre><p id="22df9f31-1732-48e3-a67e-1db8e6903199" class="">
+</p><h2 id="ebe7e581-c627-4833-b086-9d10395d146b" class="">Raft Implementation</h2><p id="2c88233b-1b67-4a6d-b532-9f908f77455f" class="">Implementing Raft takes a lot of time, patience and debugging ( and of course, coffee!). It was definitely one of the most challenging programs I ever wrote. It was also the first time I did any concurrent programming.</p><p id="79f5195a-8be8-416c-8d38-fd3e5acc549b" class="">Some tips:</p><ol id="d2d65349-97eb-4bff-a2f0-088085ae8f56" class="numbered-list" start="1"><li>Test extensively.<ol id="79000a94-638e-443f-b030-63dfb50c143b" class="numbered-list" start="1"><li>Whenever possible, test every function to be sure it is doing the right thing</li></ol></li></ol><ol id="e49637e0-8ff4-4d72-8849-d33137287cf2" class="numbered-list" start="2"><li>Descriptive log statements<ol id="e6500d48-ae30-4a25-91bc-81d8c484473f" class="numbered-list" start="1"><li>Writing Raft, I had to write debug statements that I could use effectively. If I want to know everything that my cluster is doing (i.e. every operation, message), I will print a lot of lines!</li></ol><ol id="102b8716-6a19-40fc-a43b-806b362eaf46" class="numbered-list" start="2"><li>I want to be able to filter the debug statements effectively lines. Hence my debug statements constitute the following format: 
+<code>[Error|Debug], [Peer|Leader], [statement], [serverId]</code></li></ol><ol id="beea663f-cd51-40e7-b27e-e127dffdf12d" class="numbered-list" start="3"><li>I could filter the messages by leaders and followers easily in this format.</li></ol></li></ol><p id="04676775-1592-4801-be85-553ea7592eb5" class="">
+</p><h1 id="aaa04f3a-ea38-4bd8-8c31-392b5ed6c52f" class="">References</h1><ol id="31158a49-a1df-4cef-8c7e-336ffb0278c3" class="numbered-list" start="1"><li><a href="https://raft.github.io/raft.pdf">Raft paper</a></li></ol><p id="e8d49c42-3fe2-4498-a0c4-f5fada34cdc7" class="">
+</p><p id="c5f87473-161c-487e-92a2-1a5adcbe1f33" class="">
+</p><p id="1fc420eb-d74d-41c2-a685-984a7f90b074" class="">
+</p></div></article></body></html>
