@@ -1,0 +1,778 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Simple Concurrency</title><style>
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 3px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	text-indent: -1.7em;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, YuMincho, "Yu Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Songti TC", "Songti SC", "SimSun", "Nanum Myeongjo", NanumMyeongjo, Batang, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC', 'Noto Sans CJK KR'; }
+
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK KR'; }
+
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, YuMincho, "Yu Mincho", "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Songti TC", "Songti SC", "SimSun", "Nanum Myeongjo", NanumMyeongjo, Batang, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC', 'Noto Sans CJK KR'; }
+
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK KR'; }
+
+.highlight-default {
+}
+.highlight-gray {
+	color: rgb(155,154,151);
+}
+.highlight-brown {
+	color: rgb(100,71,58);
+}
+.highlight-orange {
+	color: rgb(217,115,13);
+}
+.highlight-yellow {
+	color: rgb(223,171,1);
+}
+.highlight-teal {
+	color: rgb(15,123,108);
+}
+.highlight-blue {
+	color: rgb(11,110,153);
+}
+.highlight-purple {
+	color: rgb(105,64,165);
+}
+.highlight-pink {
+	color: rgb(173,26,114);
+}
+.highlight-red {
+	color: rgb(224,62,62);
+}
+.highlight-gray_background {
+	background: rgb(235,236,237);
+}
+.highlight-brown_background {
+	background: rgb(233,229,227);
+}
+.highlight-orange_background {
+	background: rgb(250,235,221);
+}
+.highlight-yellow_background {
+	background: rgb(251,243,219);
+}
+.highlight-teal_background {
+	background: rgb(221,237,234);
+}
+.highlight-blue_background {
+	background: rgb(221,235,241);
+}
+.highlight-purple_background {
+	background: rgb(234,228,242);
+}
+.highlight-pink_background {
+	background: rgb(244,223,235);
+}
+.highlight-red_background {
+	background: rgb(251,228,228);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(55, 53, 47, 0.6);
+	fill: rgba(55, 53, 47, 0.6);
+}
+.block-color-brown {
+	color: rgb(100,71,58);
+	fill: rgb(100,71,58);
+}
+.block-color-orange {
+	color: rgb(217,115,13);
+	fill: rgb(217,115,13);
+}
+.block-color-yellow {
+	color: rgb(223,171,1);
+	fill: rgb(223,171,1);
+}
+.block-color-teal {
+	color: rgb(15,123,108);
+	fill: rgb(15,123,108);
+}
+.block-color-blue {
+	color: rgb(11,110,153);
+	fill: rgb(11,110,153);
+}
+.block-color-purple {
+	color: rgb(105,64,165);
+	fill: rgb(105,64,165);
+}
+.block-color-pink {
+	color: rgb(173,26,114);
+	fill: rgb(173,26,114);
+}
+.block-color-red {
+	color: rgb(224,62,62);
+	fill: rgb(224,62,62);
+}
+.block-color-gray_background {
+	background: rgb(235,236,237);
+}
+.block-color-brown_background {
+	background: rgb(233,229,227);
+}
+.block-color-orange_background {
+	background: rgb(250,235,221);
+}
+.block-color-yellow_background {
+	background: rgb(251,243,219);
+}
+.block-color-teal_background {
+	background: rgb(221,237,234);
+}
+.block-color-blue_background {
+	background: rgb(221,235,241);
+}
+.block-color-purple_background {
+	background: rgb(234,228,242);
+}
+.block-color-pink_background {
+	background: rgb(244,223,235);
+}
+.block-color-red_background {
+	background: rgb(251,228,228);
+}
+.select-value-color-default { background-color: rgba(206,205,202,0.5); }
+.select-value-color-gray { background-color: rgba(155,154,151, 0.4); }
+.select-value-color-brown { background-color: rgba(140,46,0,0.2); }
+.select-value-color-orange { background-color: rgba(245,93,0,0.2); }
+.select-value-color-yellow { background-color: rgba(233,168,0,0.2); }
+.select-value-color-green { background-color: rgba(0,135,107,0.2); }
+.select-value-color-blue { background-color: rgba(0,120,223,0.2); }
+.select-value-color-purple { background-color: rgba(103,36,222,0.2); }
+.select-value-color-pink { background-color: rgba(221,0,129,0.2); }
+.select-value-color-red { background-color: rgba(255,0,26,0.2); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="78bfc6b4-0d20-4f19-ac69-dcd570e808a8" class="page sans"><header><div class="page-header-icon undefined"><span class="icon">⛸️</span></div><h1 class="page-title">Simple Concurrency</h1></header><div class="page-body"><h1 id="459ae56e-e9f7-4e53-999c-b609bb510f9d" class="">What is concurrency?</h1><p id="5000ad3e-232d-4fe8-83b0-4613e424d6d9" class=""><a href="https://en.wikipedia.org/wiki/Concurrency_(computer_science)">Concurrency</a> is the ability of different parts or units of a program, algorithm, or problem to be executed out-of-order or in partial order, without affecting the final outcome. </p><p id="23b68906-d9b6-477f-8d67-6de963696f9e" class="">You may also think of them as threads of computation, and different threads can be run independent of one another, asynchronously, or in parallel, depending on what your hardware supports.</p><p id="42a8f4ec-e1b8-45d6-ba34-da1de78b77cd" class="">Concurrency can significantly improve the overall speed of execution in multi-core systems.  </p><p id="86c592b3-6dca-48d2-8f62-7fd060726a75" class="">In this article, I will explore some basic building blocks of doing simple concurrent computation in C++. All code examples can be found <a href="https://github.com/arorashu/learn-cxx/tree/master/concurrent">here</a>.</p><h1 id="1c2b4f5a-f4d6-41ad-b6e0-7425810a4a62" class="">Sum of numbers</h1><p id="f5479cbf-5142-4af7-b46d-7b2474bc179f" class="">One of the simplest problems to showcase the benifits of concurrency is a sum of numbers. Let&#x27;s write a function in C++ to sum the numbers from 1 to 10,000,000 (10 million).</p><pre id="a0986430-c092-4403-b858-cb79c0d5db9c" class="code code-wrap"><code>/**
+ * Program do sum of numbers
+**/
+
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+
+constexpr auto maxValue = 10000000;
+
+int64_t doSum(int64_t start, int64_t end) {
+  int64_t sum = 0;
+  for(auto i=start; i&lt;=end; i++) {
+    sum += i;
+  }
+  return sum;
+}
+
+using namespace std;
+
+int main(int argc, char **argv)
+{
+  int64_t linearSum = 0;
+  auto begin_time = chrono::steady_clock::now();
+  linearSum = doSum(1, maxValue);
+  auto end_time =chrono::steady_clock::now();
+  
+  double elapsed_ms = 
+  chrono::duration_cast&lt;chrono::milliseconds&gt;(end_time - begin_time).count();
+
+  cout &lt;&lt; &quot;len, sum, time(milli seconds)\n&quot;;
+  cout &lt;&lt; maxValue &lt;&lt; &quot;, &quot; &lt;&lt; linearSum &lt;&lt; &quot;, &quot; &lt;&lt; elapsed_ms &lt;&lt; endl;
+
+  return 0;
+}</code></pre><p id="041484da-8356-4938-aca8-ab154ce6f792" class="">
+</p><p id="a57af4ee-77ea-46f9-a2fb-fbe875eea2db" class="">This consistently runs in a median time of 25ms on my machine. Let&#x27;s try to speed this up using by adding some concurrency. I am using the g++ compiler without any optimizations.
+Compile  by running:
+<code>$ g++ basic-sum.cpp</code></p><h1 id="cd6569b3-64bc-46ef-9672-af9768b28a19" class="">Using threads and atomic</h1><p id="3e926e04-c314-4276-a870-d1ba5ed2958d" class="">Using C++ <a href="https://en.cppreference.com/w/cpp/thread/thread"><code>std::thread</code></a> and <a href="https://en.cppreference.com/w/cpp/atomic/atomic"><code>std::atomic</code></a>, the following code divides the sum computation evenly among 10 threads. </p><pre id="9618042e-404b-409a-9241-c288a6dddeb2" class="code code-wrap"><code>/**
+ * sum of numbers using threads and atomic
+**/
+
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+#include &lt;thread&gt;
+#include &lt;atomic&gt;
+#include &lt;vector&gt;
+
+using namespace std;
+
+constexpr auto maxValue = 10000000;
+
+atomic&lt;int64_t&gt; concurrentSum{0};
+
+void doSum(int64_t start, int64_t end) {
+  int64_t sum = 0;
+  for(auto i=start; i&lt;=end; i++) {
+    sum += i;
+  }
+
+  concurrentSum += sum;
+}
+
+
+int main(int argc, char **argv)
+{
+  constexpr int THREADS_COUNT = 10;
+  cout &lt;&lt; &quot;len, sum, time(milli seconds)\n&quot;;
+  vector&lt;thread&gt; threadPool(10);
+  auto begin_time = chrono::steady_clock::now();
+  for(int i=0; i&lt;THREADS_COUNT; i++) {
+    threadPool[i] = thread(&amp;doSum, (i*maxValue/THREADS_COUNT)+1, ((i+1)*maxValue/THREADS_COUNT));
+  }
+
+  for(auto &amp;th: threadPool) {
+    th.join();
+  }
+
+  auto end_time =chrono::steady_clock::now();
+  
+  double elapsed_ms = 
+  chrono::duration_cast&lt;chrono::milliseconds&gt;(end_time - begin_time).count();
+
+  cout &lt;&lt; maxValue &lt;&lt; &quot;, &quot; &lt;&lt; concurrentSum &lt;&lt; &quot;, &quot; &lt;&lt; elapsed_ms &lt;&lt; endl;
+
+  return 0;
+}</code></pre><p id="b3687b28-13e1-4033-918c-a076624bfadb" class="">
+</p><p id="eef869ce-ba68-4bfd-aedc-f3b450ba133f" class="">Compiling again with g++, this runs in a median time of 5ms on my machine. Roughly 5 times speedup! Though the code is more complex. </p><p id="25022cc6-17b4-43ac-9e04-6fd3fb09d9e4" class="">Compile using:
+<code>$ g++ thread-sum-atomic.cpp -pthread</code></p><p id="8fa19599-58b4-41a9-9d74-a15ef0d04124" class="">Though this isn&#x27;t a great benchmarking technique, we can list out all the outputs from a 1000 runs to get a ballpark figure:
+<code>$ for i in {1..1000}; do ./a.out; done | sort | uniq -c</code></p><h1 id="a442aae2-41a4-4571-90d2-0fb275084ea7" class="">Using threads and mutex</h1><p id="1cc2cf2a-c035-4d15-a45d-1b5ed9cfaf92" class="">Using a <a href="https://en.cppreference.com/w/cpp/thread/mutex"><code>std::mutex</code></a> instead of <code>std::atomic</code>, we only have to change the soSum function to guard the update of the <code>concurrentSum</code>. The only changes are:</p><pre id="21160f4b-e21e-40e5-9fb3-f2eb385b70ac" class="code code-wrap"><code>#include &lt;mutex&gt;
+
+int64_t concurrentSum{0};
+mutex sum_mutex;
+
+void doSum(int64_t start, int64_t end) {
+  int64_t sum = 0;
+  for(auto i=start; i&lt;=end; i++) {
+    sum += i;
+  }
+  sum_mutex.lock();
+  concurrentSum += sum;
+  sum_mutex.unlock();
+}</code></pre><p id="d07fa97f-3e9d-4697-a061-45f4c049e32f" class="">The complete code can be found <a href="https://github.com/arorashu/learn-cxx/blob/master/concurrent/thread-sum-mutex.cpp">here</a>. This also runs in a median time of 5ms on my machine.</p><h1 id="628f64c9-ea5c-4a49-ad7a-21af21ac53b8" class="">Using tasks</h1><p id="3efbec5d-b534-41b7-a6fd-043fd97dac29" class="">Tasks is an even higher level of abstraction that avoids dealing with threads directly. Using tasks (<a href="https://en.cppreference.com/w/cpp/thread/async"><code>std::async</code></a>), we can write the code to do sum as:</p><p id="daa2cbe3-6d19-48c0-a2d9-c1e3d8627f1f" class=""> </p><pre id="81473ce7-aed7-4090-9744-ee6844e23681" class="code code-wrap"><code>/**
+ * sum of numbers using tasks
+**/
+
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+#include &lt;future&gt;
+#include &lt;vector&gt;
+#include &lt;atomic&gt;
+
+using namespace std;
+
+constexpr auto maxValue = 10000000;
+constexpr int THREADS_COUNT = 10;
+  
+atomic&lt;int64_t&gt; concurrentSum{0};
+
+void doSum(int64_t start, int64_t end) {
+  int64_t sum = 0;
+  for(auto i=start; i&lt;=end; i++) {
+    sum += i;
+  }
+
+  concurrentSum += sum;
+}
+
+
+int main(int argc, char **argv)
+{
+  cout &lt;&lt; &quot;len, sum, time(milli seconds)\n&quot;;
+  vector&lt;future&lt;void&gt;&gt; taskPool(THREADS_COUNT);
+  auto begin_time = chrono::steady_clock::now();
+  for(int i=0; i&lt;THREADS_COUNT; i++) {
+    taskPool[i] = async(&amp;doSum, (i*maxValue/THREADS_COUNT)+1, ((i+1)*maxValue/THREADS_COUNT));
+  }
+
+  for(auto &amp;th: taskPool) {
+    th.get();
+  }
+
+  auto end_time =chrono::steady_clock::now();
+  
+  double elapsed_ms = 
+  chrono::duration_cast&lt;chrono::milliseconds&gt;(end_time - begin_time).count();
+
+  cout &lt;&lt; maxValue &lt;&lt; &quot;, &quot; &lt;&lt; concurrentSum
+       &lt;&lt; &quot;, &quot; &lt;&lt; elapsed_ms &lt;&lt; endl;
+
+  return 0;
+}</code></pre><p id="b78a65e7-d7bb-48b2-be2b-99ff5ffebccb" class="">The median time of this code is also 5ms on my machine.</p><p id="a4a42826-2cdd-4b1e-aa13-29cc40a318d7" class="">
+</p><p id="b9a7334a-6522-4d8b-a2b4-a6b692eb7e62" class="">These are some useful concurrency patterns in C++ (introduced after C++11). The performance will vary depending on how many threads you spawn, and your processor, cores, etc. The harder part of concurrency is writing code that is correct in all conditions. <code>std::mutex</code> and <code>std::atomic</code> are useful facilities for locking.</p><h1 id="bb20ae6d-3fe9-46ba-8b04-13e5f45a567c" class="">References</h1><ol id="3e55948b-417a-44af-b81a-3d67392b82e9" class="numbered-list" start="1"><li><a href="https://www.classes.cs.uchicago.edu/archive/2013/spring/12300-1/labs/lab6/">Concurrency in C++11</a></li></ol><ol id="2318d137-381c-4ef7-a0d0-c2e428a56ecd" class="numbered-list" start="2"><li><a href="https://en.cppreference.com/w/">C++ reference</a></li></ol><p id="1345950d-6377-4e9c-b3c7-ce16036719e6" class="">
+</p></div></article></body></html>
