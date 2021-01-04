@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+  <link rel="stylesheet" href="../water.min.css" type="text/css" />
+</head>
+<body>
+<h1 id="deploying-on-aws---day-1">Deploying on AWS - Day 1</h1>
+<p>I wanted to learn how the public cloud works. Specifically, how do I deploy an application on the internet in 2021. To learn how to do this, I decided to deploy my <a href="https://github.com/arorashu/arxiv-sanity-preserver">fork</a> of the awesome <a href="https://github.com/karpathy/arxiv-sanity-preserver">arxiv-sanity-preserver</a>. This fork serves paper from the arxiv <a href="https://arxiv.org/category_taxonomy">category</a> cs.DC (Distributed, Parallel, and Cluster Computing). Since AWS is the most popular cloud provider, I will deploy the application on AWS. Let's get started.</p>
+<h1 id="run-locally">1. Run Locally</h1>
+<p>The project README provides fairly good documentation on how to run the project. I set up and run the website on my personal computer. Since I am testing that everything works, I only download 100 recent papers, by passing the <code>--max-index</code> argument.</p>
+<p>Following all the steps, I can access the application on my local machine by browsing to <a href="https://localhost:5000" class="uri">https://localhost:5000</a> .</p>
+<h1 id="deploy-on-an-aws">2. Deploy on an AWS</h1>
+<p>Now, I want to deploy the application to AWS. Specifically, I want to access the app from any computer connected to the internet.</p>
+<h2 id="create-an-aws-ec2-instance">2.1 Create an AWS EC2 Instance</h2>
+<p>I created an EC2 instance with the Ubuntu OS. It has 1vCPU, 1GB of RAM and 8GB of attached SSD. (this is free in the AWS free tier). Instructions <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EC2_GetStarted.html#ec2-clean-up-your-instance">here</a>.</p>
+<p>When creating the instance, I allow access to the SSH port (22) and HTTP port (80). This is so we can SSH into the machine, and communicate with our app running on the machine via HTTP.</p>
+<h2 id="install-dependencies">2.2 Install dependencies</h2>
+<p>After creating the AWS instance, I connect to the instance using SSH. Then, I installed the relevant dependencies for my app using <code>apt</code>:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="fu">sudo</span> apt update
+$ <span class="fu">sudo</span> apt-get install imagemagick poppler-utils python3-virtualenv sqlite3</code></pre></div>
+<p>and installed mongodb using:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># install mongodb</span>
+<span class="co"># https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/</span>
+$ <span class="fu">wget</span> -qO - https://www.mongodb.org/static/pgp/server-4.4.asc <span class="kw">|</span> <span class="fu">sudo</span> apt-key add -
+$ <span class="bu">echo</span> <span class="st">&quot;deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse&quot;</span> <span class="kw">|</span> <span class="fu">sudo</span> tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+$ <span class="fu">sudo</span> apt-get update
+$ <span class="fu">sudo</span> apt-get install -y mongodb-org
+
+<span class="co"># To prevent unintended upgrades, pin the package at the currently installed version</span>
+$ <span class="bu">echo</span> <span class="st">&quot;mongodb-org hold&quot;</span> <span class="kw">|</span> <span class="fu">sudo</span> dpkg --set-selections
+$ <span class="bu">echo</span> <span class="st">&quot;mongodb-org-server hold&quot;</span> <span class="kw">|</span> <span class="fu">sudo</span> dpkg --set-selections
+$ <span class="bu">echo</span> <span class="st">&quot;mongodb-org-shell hold&quot;</span> <span class="kw">|</span> <span class="fu">sudo</span> dpkg --set-selections
+$ <span class="bu">echo</span> <span class="st">&quot;mongodb-org-mongos hold&quot;</span> <span class="kw">|</span> <span class="fu">sudo</span> dpkg --set-selections
+$ <span class="bu">echo</span> <span class="st">&quot;mongodb-org-tools hold&quot;</span> <span class="kw">|</span> <span class="fu">sudo</span> dpkg --set-selections</code></pre></div>
+<h2 id="run-application">2.3 Run application</h2>
+<p>Then, I installed the app dependencies as in <a href="https://www.notion.so/Day-1-252b37c81d6a46c284ea7fa4d633435f">1. Run Locally</a>, and run the app. To start the application in production mode, I run the <a href="http://server.py">serve.py</a> with the <code>--prod</code> flag. i.e. <code>python serve.py --prod</code>. By default the app runs on port 5000. Since the storage on the instance is limited (8 GB), for now, I only fetched 400 papers. I will fix this in the future.</p>
+<p>To chech that the app is running, on another terminal on the instance, run :</p>
+<p><code>$ curl [localhost:5000](http://localhost:5000) | less</code></p>
+<p>This shows the HTML response of the web server. The server logs (output in terminal running <code>python [serve.py](http://serve.py) --prod</code>) will show what HTTP resource accessed and the response (200 OK, if everything works correctly).</p>
+<h2 id="redirect-http-traffic-to-the-application-server">2.4 Redirect HTTP traffic to the application server</h2>
+<p>Now, the application is running on port 5000, but the instance only allows public access on HTTP port 80. So, navigating to the the public IPv4 address of the instance (i.e. <code>[http://instance-ip-address](http://instance-ip-address:5000)</code>), it will not load anything. There are a 2 options now.</p>
+<ol style="list-style-type: decimal">
+<li>open up port 5000 to the world This isn't a good option, because now to view the application, you will have to go to <code>[http://instance-ip-address:5000](http://instance-ip-address:5000)</code> . Thar is clunky and bad.</li>
+<li>Redirect port 80 to port 5000 (where our app is running) This is the standard way, because by default <a href="http://instance-ip-address/">http://instance-ip-address</a> navigates to <a href="http://instance-ip-address/">http://instance-ip-address</a>:80</li>
+</ol>
+<p>To redirect the traffic, I then use the linux <code>iptables</code> command (<a href="https://www.cyberciti.biz/faq/linux-port-redirection-with-iptables/">reference</a>):</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="ex">iptables</span> -t nat -A PREROUTING -i eth0 -p tcp --dport <span class="va">$srcPortNumber</span> -j REDIRECT --to-port <span class="va">$dstPortNumber</span></code></pre></div>
+<p>where replace $srcPortNumber with 80 and $dstPortNumber with 5000. Now, on navigating to <a href="http://instance-ip-address/">http://instance-ip-address</a>, I can see the app running!</p>
+<p>However, testing this by running <code>$ curl [localhost](http://localhost) | less</code> on the instance itself would not work. To enable the redirect on the instance, I invoke the <code>iptables</code> command as (<a href="https://askubuntu.com/questions/444729/redirect-port-80-to-8080-and-make-it-work-on-local-machine">reference</a>):</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="ex">iptables</span> -t nat -A OUTPUT -o lo -p tcp --dport 80 -j REDIRECT --to-port 5000</code></pre></div>
+<p>Now, the HTTP response from the instance can be checked using curl as well.</p>
+<h1 id="result">Result</h1>
+<p>At this stage, the application is running on an AWS EC2 instance, and is publically accessible by visiting <a href="http://instance-ip-address/">http://instance-ip-address</a>!</p>
+<h1 id="learnings">Learnings</h1>
+<p>In this exercise, I learned the following:</p>
+<ol style="list-style-type: decimal">
+<li>Creating and accessing an AWS EC2 instance</li>
+<li>How to redirect network traffic from one TCP port to another</li>
+</ol>
+<h1 id="up-next">Up Next</h1>
+<p>The application works right now, but a lot of improvements should be made to call this a production level deployment. I will tackle this step by step. The immediate next steps are.</p>
+<h2 id="connect-to-an-external-storage">1. Connect to an external storage</h2>
+<p>EC2 instances are ephemeral, i.e. they can be stopped and terminated. Once an instance is terminated (accidentally or AWS goes down or what not), the data stored in the storage attached to that instance is lost.</p>
+<p>A better strategy is to store the application data in a database (like Dynamo DB) or a stable data store (like <a href="https://aws.amazon.com/s3/">Amazon S3</a>). In our application, the data is the txt files that are created after pdf to text conversion.</p>
+<h2 id="use-a-load-balancer-to-redirect-traffic">2. Use a load balancer to redirect traffic</h2>
+<p>In <a href="https://www.notion.so/Day-1-252b37c81d6a46c284ea7fa4d633435f">2.4</a>, I used <code>iptables</code> to redirect traffic from port 80 to 5000. This configuration will need to be created everytime a new instance is created. A more robust strategy may be to use a <a href="https://aws.amazon.com/elasticloadbalancing/classic-load-balancer/">load balancer</a>, that receives public connections on port 80, and internally redirects all the traffic to the EC2 instance on port 5000. This is more complex to setup, as we need to pay more attention to the security groups settings. For a more complex application, this allows serving more concuurent HTTP requests by scaling out to multiple running instances. I will explore this in the future.</p>
+</body>
+</html>
