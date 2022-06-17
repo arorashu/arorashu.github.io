@@ -1,12 +1,12 @@
 <title>Artificial General Intelligence - Westworld</title>
 # Artificial General Intelligence - Westworld
 
-Warning: Spoilers on the TV show Westworl ahead
+Warning: Spoilers on the TV show Westworld ahead
 
 Westworld has a very interesting take to AGI.
 A very realistic and believable one.
 
-First were created the first gen AGIs. They are rustic, simple, naive.
+First developed were the first gen AGIs. They are rustic, simple, naive.
 Then after many generations of dying (reboots) over years,
 some of them started to gain more intelligence.
 Gained abilities even, like remembering memories from an earlier reboot.
