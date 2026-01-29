@@ -1,19 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>basic algorithms in go</title>
-    <link rel="stylesheet" href="index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic algorithms in Go - Shubham Arora</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
-
 <body>
-    <center>
-        <h1>Basic algorithms in Go</h2>
-    </center>
-    <div id="index"></div>
-    <div id="graph" class="algo-types">
-        <h2>Graph</h2>
-        <h3>Topological sort</h3>
-        <p><pre>
-            // edges from prereq[][1] -> prereq[][0]
+<div class="post">
+    <p><a href="../index.html">&larr; Home</a> · <a href="index.html">Posts</a></p>
+<h1>Basic algorithms in Go</h1>
+<h2>Graph</h2>
+<h3>Topological sort</h3>
+<pre><code>            // edges from prereq[][1] -&gt; prereq[][0]
             // function to return if topologicalSort is possible
             // finalQ stores the resulting sort
             func findOrder(numCourses int, prerequisites [][]int) []int {
@@ -34,16 +33,16 @@
                 // 1 is temp
                 // 2 is permanent
                 
-                for i:=0; i < numCourses; i++ {
+                for i:=0; i &lt; numCourses; i++ {
                     if visited[i] != 2{
-                        if !dfs(i, g, visited, &finalQ) {
+                        if !dfs(i, g, visited, &amp;finalQ;) {
                             finalQ = finalQ[0:0]
                             return finalQ
                         }
                     }
                 }
                 if len(finalQ) == 0 {
-                    for i:=0; i < numCourses; i++ {
+                    for i:=0; i &lt; numCourses; i++ {
                         finalQ = append(finalQ, i)
                     }
                 }
@@ -72,17 +71,30 @@
             
             func reverse(arr []int) {
                 sz := len(arr)
-                for i:=0; i<sz/2; i++ {
-                    arr[i], arr[sz-1-i] = arr[sz-1-i], arr[i]
-                }
-            }
-        </pre></p>
-        <span>References: <a href="https://en.wikipedia.org/wiki/Topological_sorting">Wikipedia</a></span>
-    </div>
-    <div id="strings" class="algo-types">
-        <h2>Strings</h2>
-        <h3>Trie</h3>
-        <p><pre> 
+                for i:=0; i
+
+
+        References: [Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting)
+    
+
+
+    
+
+
+        
+
+## Strings
+
+
+        
+
+### Trie
+
+
+        
+
+
+ 
             // Refernece:  https://github.com/EndlessCheng/codeforces-go
             func init() { debug.SetGCPercent(-1) }
 
@@ -104,7 +116,7 @@
                 for _, ch := range word {
                     index := ch - 'a'
                     if current.children[index] == nil {
-                        current.children[index] = &Trie {}
+                        current.children[index] = &amp;Trie; {}
                     }
                     current = current.children[index]
                 }
@@ -138,25 +150,8 @@
                 }
                 return true
             }
-        </pre></p>
-        <span>References: <a href="https://github.com/EndlessCheng/codeforces-go">EndlessCheng</a></span>
-    </div>
+</code></pre>
+<p>References: <a href="https://github.com/EndlessCheng/codeforces-go">EndlessCheng</a></p>
+</div>
 </body>
-<script>
-    window.onload = function(){
-        let indexHTML = "<h2>Index</h2><ol>";
-        let index = [];
-        headings = document.querySelectorAll("h2");
-        let id = 1;
-        headings.forEach(element => {
-            let heading = element.innerText;
-            index.push(heading);
-            element.id = `${heading}`;
-            indexHTML += `<li><a href="#${heading}"> ${heading}</li>`
-            element.innerText = `${id}. ${heading}`
-            id++;
-        });
-        indexHTML += "</ol>";
-        document.querySelector("#index").innerHTML = indexHTML;
-    }
-</script>
+</html>

@@ -1,25 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>sorting in go</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Sort - Shubham Arora</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
-
 <body>
-    <div>
-    <h3>Sorting int slices</h3>
-    <p><pre>
-    package main
+<div class="post">
+    <p><a href="../index.html">&larr; Home</a> · <a href="index.html">Posts</a></p>
+<h3>Sorting int slices</h3>
+<pre><code>    package main
 
     import (
-        "fmt"
-        "sort"
+        &quot;fmt&quot;
+        &quot;sort&quot;
     )
 
     func main() {
         arr := []int {20, 13, 12, 5, 1}
             sort.Ints(arr)
-        fmt.Printf("%v \n", arr)
+        fmt.Printf(&quot;%v \n&quot;, arr)
     }
-    </pre></p>
-    <p>code at <a href="https://play.golang.org/p/twbbzi7qi_y">go playground</a></p>
-    <p> <a href="https://golang.org/pkg/sort/">godoc reference</a></p>
-    </div>
+</code></pre>
+<p>code at <a href="https://play.golang.org/p/twbbzi7qi_y">go playground</a></p>
+<p><a href="https://golang.org/pkg/sort/">godoc reference</a></p>
+</div>
 </body>
+</html>
