@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reminder-sync"
+version = "0.1.0"
+description = "Sync iCloud Reminders via CalDAV with configurable notification surfaces"
+requires-python = ">=3.10"
+dependencies = [
+    "caldav>=1.3",
+    "icalendar>=5.0",
+    "pyyaml>=6.0",
+    "structlog>=23.0",
+    "httpx>=0.25",
+    "aiosqlite>=0.19",
+    "click>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23",
+    "radicale>=3.0",
+]
+
+[project.scripts]
+reminder-sync = "reminder_sync.cli:cli"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
