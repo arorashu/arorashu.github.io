@@ -1,2 +1,0 @@
-[console_scripts]
-reminder-sync = reminder_sync.cli:cli
